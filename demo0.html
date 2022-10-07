@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<head>
+    <title>PointerInputs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+
+html,body{
+    width:100%;
+    height:100%;
+    margin:0;
+    overscroll-behavior-x: none; /* prevent windows chrome swipe left and right goes back/forward in browser history*/
+}
+*{
+    box-sizing: border-box;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
+#main{
+    width:500px;
+    min-height:100px;
+    float:left;
+}
+/*this is the container for elemments, can be used as constraint*/
+.touch-container{
+    width:80%;
+    min-height:100vh;
+    margin: 0 auto;
+    border:3px dotted #000;
+}
+/*so that elem.touch can be positioned relative to the rest of the document*/
+.touch-wrap{
+    position:relative;
+    display:block;
+    width:500px;
+    height:300px;
+    touch-action: none;
+    pointer-events: none;
+    border:2px dashed #ccc;
+    margin: 1em auto;
+}
+/*this is the elem that will be transformed*/
+.touch{
+    background: #fff;
+    width:100%;
+    height:100%;
+    position:absolute;
+    top:0;
+    left:0;
+    touch-action: none; /* need this to avoid touchcancel */
+    pointer-events: all;
+    transform-origin: center center;
+    transition: transform 0.1s ease-in;
+    padding:1em;
+    font-size:2em;
+    color:#fff;
+    box-shadow: 0 0 4px #0008, 0 0 50px #0003;
+}
+/*a class to prevent animation while dragging*/
+.notransition{
+    transition: none !important;
+}
+
+
+#debug{
+    width:100%;
+    background: #eee;
+    opacity:0.0;
+}
+#debug:hover{
+    opacity:1;
+}
+/* draw table */
+table.test{
+    table-layout: fixed;
+    width:100%;
+}
+table.test td{
+    border: 1px solid;
+}
+
+#debug-point{
+    width:12px;
+    height:12px;
+    position:absolute;
+    background-color: #f00;
+    z-index:100;
+    top:-100px;
+    left:-100px;
+    border-radius: 6px;
+    pointer-events: none;
+}
+#debug-box{
+    position:absolute;
+    top:50px;
+    left:50px;
+    width:1000px;
+    height:500px;
+    border:1px solid red;
+    pointer-events: none;
+}
+button{
+    padding:1em 2em;
+    font-size:1.5em
+}
+.touch-container button{
+    position:sticky;
+    top:0;
+    float:right;
+    z-index: 100;
+}
+</style>
+
+</head>
+<body>
+
+<div id="main" style="position:fixed;">
+    <div id="debug"></div>
+</div>
+
+<br><br>
+<div class="touch-main">
+
+
+    <h2>1. Without reserved space in layout</h2>
+    <div class="touch-container">
+        <button onclick="addItemTo(this)" >Add</button>
+
+         <div id="Item6" class="touch" style="width:500px;height:300px;top:30%;left:30%;transform:rotate(-25deg)">Item6</div>
+         <div id="Item5" class="touch" style="width:500px;height:300px;top:50%;left:50%;transform:rotate(25deg)">Item5</div>
+    </div>
+
+    <h2>2. Reserve space in layout</h2>
+    <div class="touch-container" id="here">
+
+        <button onclick="addWrappedItemTo('here')" >Add</button>
+
+        <div class="touch-wrap">
+            <div id="Item1" class="touch" style="background:#888">Item1</div>
+        </div>
+
+        <div class="touch-wrap">
+            <div id="Item2" class="touch" style="background:#aaa">Item2</div>
+        </div>
+        <div class="touch-wrap">
+            <div id="Item3" class="touch">Item3</div>
+        </div>
+
+    </div>
+    <h2>3. item within a different container</h2> 
+    <div class="touch-container">
+        <div class="touch-wrap">
+            <div id="Item4" class="touch">Item4 within a different container</div>
+        </div>
+    </div>
+
+
+</div>
+
+<div id="debug-point" class="debug-point"></div>
+
+<!-- <div id="debug-box"></div> -->
+
+<script src="./js/PointerInputs.js"></script>
+<script>
+var ir = new PointerInputs();
+
+var counter = 100;
+function addItemTo(elem){
+
+    var el = elem.closest('.touch-container');
+    var touch = document.createElement('div');
+    touch.classList.add("touch");
+    touch.id = "Item"+counter;
+    touch.innerText = touch.id;
+    ////// random
+    touch.style.width = getRandomInt(200,500)+"px";
+    touch.style.height = getRandomInt(200,500)+"px";
+    touch.style.background = randomGreyHex(()=>{return getRandomInt(80,200);});
+    touch.style.transform = `translate(${getRandomInt(0, 800)}px,${getRandomInt(0, 600)}px) rotate(${getRandomInt(-30, 30)}deg) scale(${getRandom(0.5,1.2)})`
+
+    el.appendChild(touch);
+    ir.bringToFront(touch);
+    counter += 1;
+}
+
+function addWrappedItemTo(domid){
+    var el = document.getElementById(domid);
+
+    var item = document.createElement('div');
+    item.classList.add("touch-wrap");
+    var touch = document.createElement('div');
+    touch.classList.add("touch");
+    touch.id = "Item"+counter;
+    touch.innerText = touch.id;
+
+    ////// random
+    item.style.width = getRandomInt(200,500)+"px";
+    item.style.height = getRandomInt(200,500)+"px";
+    touch.style.background = randomGreyHex();
+
+    item.appendChild(touch);
+    el.appendChild(item);
+    counter += 1;
+}
+function randomGreyHex(func=()=>{return Math.random()*(256)|0;}) {
+  var v = func().toString(16);//bitwise OR. Gives value in the range 0-255 which is then converted to base 16 (hex).
+  return "#" + v + v + v;
+}
+
+
+//https://stackoverflow.com/questions/1527803/generating-random-whole-numbers-in-javascript-in-a-specific-range
+function getRandom(min, max) {
+    return Math.random() * (max - min) + min;
+}
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+</script>
+
+
+
+
+</body>
+</html>
